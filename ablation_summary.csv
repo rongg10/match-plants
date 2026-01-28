@@ -1,0 +1,9 @@
+experiment,notebook,best_f1,best_t
+Baseline,match_plants_baseline.ipynb,0.9875776397515528,0.51
+No pretrain,match_plants_ablation_no_pretrain.ipynb,0.5632183908045977,0.37
+Freeze backbone,match_plants_ablation_freeze_backbone.ipynb,0.624390243902439,0.48
+Abs diff only,match_plants_ablation_absdiff_only.ipynb,0.9625,0.33999999999999997
+Mul only,match_plants_ablation_mul_only.ipynb,0.9685534591194969,0.64
+No augmentation,match_plants_ablation_no_augmentation.ipynb,0.9968847352024922,0.4
+No pos_weight,match_plants_ablation_no_pos_weight.ipynb,0.9968847352024922,0.29000000000000004
+Fixed threshold 0.5,match_plants_ablation_fixed_threshold.ipynb,0.9814814814814815,0.5

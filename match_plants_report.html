@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Match Plants 项目汇报（交互式）</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:#111827;
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#60a5fa;
+      --border:#243244;
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 800px at 25% 10%, rgba(96,165,250,.12), transparent 60%),
+                  radial-gradient(1000px 700px at 80% 70%, rgba(52,211,153,.10), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      overflow:hidden;
+    }
+    .deck{
+      position:relative;
+      height:100%;
+      width:100%;
+    }
+    .slide{
+      position:absolute;
+      inset:0;
+      padding: 56px 72px 72px;
+      display:none;
+      overflow:auto;
+      box-sizing:border-box;
+    }
+    .slide.active{ display:block; }
+    h1{ font-size: 46px; line-height: 1.1; margin: 0 0 12px; letter-spacing: .2px; }
+    h2{ font-size: 30px; margin: 0 0 14px; }
+    h3{ font-size: 20px; margin: 24px 0 10px; color: var(--text); }
+    p{ font-size: 18px; line-height: 1.6; margin: 10px 0; color: var(--text); }
+    ul{ margin: 10px 0 0 22px; }
+    li{ font-size: 18px; line-height: 1.6; margin: 8px 0; color: var(--text); }
+    .muted{ color: var(--muted); }
+    .grid{
+      display:grid;
+      gap: 14px;
+    }
+    .grid.two{ grid-template-columns: 1fr 1fr; }
+    .card{
+      background: rgba(17,24,39,.72);
+      border: 1px solid rgba(36,50,68,.85);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .img-pair{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      justify-content:center;
+      margin-top: 10px;
+    }
+    .img-pair img{
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 8px 20px rgba(0,0,0,.25);
+    }
+    .kpi{
+      display:flex; gap:12px; align-items:flex-start;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(96,165,250,.35);
+      background: rgba(96,165,250,.10);
+      color: var(--text);
+      font-size: 13px;
+      letter-spacing: .2px;
+      width: fit-content;
+    }
+    .code{
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding: 12px 12px;
+      color: #d1d5db;
+    }
+    .footer{
+      position:absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      pointer-events:none;
+      user-select:none;
+      opacity:.95;
+    }
+    .progress{
+      height: 6px;
+      width: 280px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .progress > div{
+      height: 100%;
+      width: 0%;
+      background: rgba(96,165,250,.85);
+    }
+    .hint{
+      font-size: 13px;
+      color: var(--muted);
+      pointer-events:none;
+    }
+    .pill{
+      pointer-events:auto;
+      font-size: 13px;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding: 8px 10px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .pill button{
+      pointer-events:auto;
+      background: rgba(96,165,250,.10);
+      border: 1px solid rgba(96,165,250,.35);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size: 13px;
+    }
+    .pill button:active{ transform: translateY(1px); }
+    .note{
+      display:none;
+      margin-top: 14px;
+      border-left: 4px solid rgba(96,165,250,.6);
+      padding: 10px 12px;
+      background: rgba(96,165,250,.08);
+      border-radius: 10px;
+      color: #dbeafe;
+    }
+    .note code{ font-family: var(--mono); font-size: 13px; }
+    .split{
+      display:flex; gap: 14px; align-items: stretch;
+    }
+    .split > .card{ flex: 1; }
+    .table{
+      width:100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 16px;
+    }
+    .table th, .table td{
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 10px 8px;
+      text-align:left;
+      vertical-align:top;
+    }
+    .table th{ color: #cbd5e1; font-weight:600; }
+    .ok{ color:#86efac; }
+    .warn{ color:#fbbf24; }
+    .danger{ color:#fb7185; }
+    .controls{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    input[type="range"]{ width: 320px; }
+    .small{ font-size: 14px; color: var(--muted); }
+    a{ color: #93c5fd; text-decoration: none; }
+    a:hover{ text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <!-- Slide 1 -->
+  <section class="slide active" data-title="Title">
+    <div class="badge">项目汇报 · 交互式网页</div>
+    <h1>预测两两一组的植物图像是否是同一品种</h1>
+    <p class="muted">目标：学习“同一株植物”的相似性，对未见过的 <b>配对</b> 做二分类。</p>
+    <h2>汇报结构</h2>
+    <div class="card">
+      <ol style="margin: 10px 0 0 22px;">
+        <li>任务与指标：正类 F1</li>
+        <li>数据：pair 标签 + 类不平衡</li>
+        <li>方法：Siamese ResNet18 + 特征融合</li>
+        <li>训练：阈值 best_t + 全量再训</li>
+        <li>结果：val_f1 与 best_t</li>
+        <li>评估口径：pair split 与 image-ID split</li>
+      </ol>
+    </div>
+    <div class="note" data-note>
+      先说明评估口径，减少对 split 的疑虑。
+    </div>
+  </section>
+
+  <!-- Slide 3 -->
+  <section class="slide" data-title="Task">
+    <h2>问题定义（Pairwise Similarity）</h2>
+    <div class="grid two">
+      <div class="card">
+        <div class="badge">输入</div>
+        <p>一对图像 <code>(img1, img2)</code></p>
+        <div class="badge" style="margin-top:10px;">输出</div>
+        <p>预测 <code>p(same)</code> / <code>0/1</code></p>
+      </div>
+      <div class="card">
+        <div class="badge">目标</div>
+        <p>学习相似性函数 <code>f(img1, img2)</code>，泛化到未见配对。</p>
+        <div class="badge" style="margin-top:10px;">评分</div>
+        <p>优化目标：正类 <b>F1</b>。</p>
+      </div>
+    </div>
+    <div class="grid two" style="margin-top:14px;">
+      <div class="card">
+        <div class="badge">Same（label=1）</div>
+        <div class="img-pair">
+          <img src="data/data/769.jpg" alt="same example 1" />
+          <img src="data/data/240.jpg" alt="same example 2" />
+        </div>
+        <p class="small muted">示例来自训练集：同一株</p>
+      </div>
+      <div class="card">
+        <div class="badge">Different（label=0）</div>
+        <div class="img-pair">
+          <img src="data/data/182.jpg" alt="different example 1" />
+          <img src="data/data/684.jpg" alt="different example 2" />
+        </div>
+        <p class="small muted">示例来自训练集：不同株</p>
+      </div>
+    </div>
+    <div class="note" data-note>
+      强调：新配对（within-gallery），不是新图库。
+    </div>
+  </section>
+
+  <!-- Slide 4 -->
+  <section class="slide" data-title="Data">
+    <h2>数据与标签：Pair supervision</h2>
+    <div class="card">
+      <ul>
+        <li><code>train_data.csv</code>：配对 + 标签</li>
+        <li><code>test_data.csv</code>：配对（生成提交 <code>Pair_Num</code>, <code>Predicted_Result</code>）</li>
+        <li>类不平衡：负样本多 → 训练用 <code>pos_weight</code></li>
+      </ul>
+      <div class="code" style="margin-top:12px;">loss = BCEWithLogitsLoss(pos_weight = neg/pos)</div>
+      <p class="small">logit 经 <code>sigmoid</code> 转概率。</p>
+    </div>
+    <div class="note" data-note>
+      可提一句：pair 标签贴近检索/去重场景。
+    </div>
+  </section>
+
+  <!-- Slide 5 -->
+  <section class="slide" data-title="Model">
+    <h2>方法：Siamese ResNet18</h2>
+    <div class="grid two">
+      <div class="card">
+        <div class="badge">Backbone</div>
+        <p>ImageNet 预训练 <b>ResNet18</b>，去掉分类头，得到 512 维向量。</p>
+        <div class="code">f = ResNet18(img)  # 512-d embedding</div>
+      </div>
+      <div class="card">
+        <div class="badge">Pair 特征融合</div>
+        <p>对两张图 embedding <code>(f1, f2)</code>：</p>
+        <ul>
+          <li><code>|f1 - f2|</code>（差异）</li>
+          <li><code>f1 * f2</code>（一致性）</li>
+        </ul>
+        <p>拼接成 1024 维，输入 MLP 输出 logit。</p>
+      </div>
+    </div>
+    <div class="note" data-note>
+      经典度量学习：backbone 学表征，head 学比较。
+    </div>
+  </section>
+
+  <!-- Slide 6 -->
+  <section class="slide" data-title="Pipeline">
+    <h2>训练流程（从验证阈值到最终提交）</h2>
+    <div class="card">
+      <ol style="margin: 10px 0 0 22px;">
+        <li>读取训练 pairs（<code>train_data.csv</code>）</li>
+        <li>切分 train/val（用于阈值选择）</li>
+        <li>训练 Siamese（含增强与类权重）</li>
+        <li>验证集扫描阈值 <code>t</code>，选 <b>best_t</b> 最大化正类 F1</li>
+        <li>全量再训 → 预测 <code>test_data.csv</code> → 写提交</li>
+      </ol>
+    </div>
+    <div class="note" data-note>
+      阈值是决策层超参，先调再全量训练是常见流程。
+    </div>
+  </section>
+
+  <!-- Slide 7 -->
+  <section class="slide" data-title="Results">
+    <h2>训练结果（pair split 验证）</h2>
+    <div class="grid two">
+      <div class="card">
+        <div class="badge">数据与切分</div>
+        <ul>
+          <li>train pairs: 2400；test pairs: 600</li>
+          <li>class: 0=1601, 1=799（正类 33.3%）</li>
+          <li>split: train 1920 / val 480（stratified）</li>
+        </ul>
+        <p class="small muted">设备：MPS（Notebook 输出）</p>
+      </div>
+      <div class="card">
+        <div class="badge">验证结果</div>
+        <ul>
+          <li>best val_f1: <b>0.988</b>（best_t = 0.51）</li>
+          <li>epoch F1: 0.839 → 0.960 → 0.981 → 0.944 → 0.988</li>
+        </ul>
+        <p class="small muted">来自一次 notebook 运行记录。</p>
+      </div>
+    </div>
+    <div class="note" data-note>
+      结果基于 pair split，偏乐观风险见下一页。
+    </div>
+  </section>
+
+  <!-- Slide 8 -->
+  <section class="slide" data-title="Leakage & Caveat">
+    <h2>关键：为什么验证集按 pair 随机切分？</h2>
+    <div class="grid two">
+      <div class="card">
+        <div class="badge">可能发生</div>
+        <p>同一图片可能出现在 train/val 的不同 pair 中。</p>
+        <p class="muted"><b>val_f1 可能偏乐观</b>（见过图像特征）。</p>
+      </div>
+      <div class="card">
+        <div class="badge">为什么仍可接受（在竞赛语境）</div>
+        <ul>
+          <li>目标是 pair 关系，而非单图分类</li>
+          <li>测试同样可能复用图片，仅配对不同</li>
+          <li>因此 pair split 是合理近似</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="badge">更严格的替代评估（如课程要求更学术）</div>
+      <p>按 <b>image ID</b> 切分：保证 val 图片不在 train 中，衡量跨图片泛化。</p>
+      <table class="table">
+        <thead><tr><th>切分方式</th><th>评估问题</th><th>与测试分布一致性</th></tr></thead>
+        <tbody>
+          <tr><td>pair-level</td><td>新配对（within-gallery）</td><td class="ok">高</td></tr>
+          <tr><td>image-ID</td><td>新图片（stricter）</td><td class="warn">偏低</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" data-note>
+      说法：承认偏乐观，同时强调分布一致。
+    </div>
+  </section>
+
+  <!-- Slide 9 -->
+  <section class="slide" data-title="Threshold Demo">
+    <h2>交互：阈值 best_t 为什么重要？</h2>
+    <div class="card">
+      <p>F1 对阈值敏感，扫描 <code>t</code> 选择 <b>best_t</b> 最大化正类 F1。</p>
+      <div class="controls">
+        <label for="thr"><b>阈值 t</b>：</label>
+        <input id="thr" type="range" min="0.1" max="0.9" step="0.01" value="0.50" />
+        <span id="thrVal" class="badge" style="margin:0;">t = 0.50</span>
+      </div>
+      <div class="grid two" style="margin-top:12px;">
+        <div class="card" style="margin:0;">
+          <div class="badge">示意（非真实数据）</div>
+          <p class="small">仅演示阈值对 precision/recall 的影响。</p>
+          <div class="code" id="demoText"></div>
+        </div>
+        <div class="card" style="margin:0;">
+          <div class="badge">如何在报告里说清楚</div>
+          <ul>
+            <li>模型输出概率；阈值决定 0/1</li>
+            <li>F1 任务中 0.5 未必最优</li>
+            <li>用验证集选 best_t，再固定用于提交</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="note" data-note>
+      质疑阈值过拟合：阈值是单一标量超参，风险较小。
+    </div>
+  </section>
+
+  <!-- Slide 12 -->
+  <section class="slide" data-title="Takeaways">
+    <h2>总结</h2>
+    <div class="card">
+      <ul>
+        <li>Siamese ResNet18 + <code>|f1-f2|</code> / <code>f1*f2</code> 做配对比较</li>
+        <li>正类 F1 目标：类权重 + 阈值扫描选 <b>best_t</b></li>
+        <li>本次 pair split：best val_f1 0.988（t=0.51）</li>
+        <li>pair split 对齐 within-gallery；更严格泛化可加 image-ID split</li>
+      </ul>
+    </div>
+    <p class="muted" style="margin-top:14px;">按 <b>O</b> 回到目录；按 <b>N</b> 显示讲者备注。</p>
+    <div class="note" data-note>
+      收尾：within-gallery 配对预测；open-set 需 image-ID split。
+    </div>
+  </section>
+
+  <!-- Overview -->
+  <section class="slide" id="overview" data-title="Overview">
+    <h2>目录（Overview）</h2>
+    <p class="muted">点击任意卡片跳转；按 <b>O</b> 返回演示。</p>
+    <div class="grid two" id="ovGrid"></div>
+  </section>
+
+  <div class="footer">
+    <div class="pill">
+      <span id="counter">1 / 13</span>
+      <button id="btnPrev" title="上一页 (←)">←</button>
+      <button id="btnNext" title="下一页 (→)">→</button>
+      <button id="btnOv" title="目录 (O)">O</button>
+      <button id="btnNotes" title="备注 (N)">N</button>
+    </div>
+    <div class="progress" aria-label="progress"><div id="bar"></div></div>
+    <div class="hint">←/→ 翻页 · O 目录 · N 备注</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide')).filter(s => s.id !== 'overview');
+  const overview = document.getElementById('overview');
+  const ovGrid = document.getElementById('ovGrid');
+  const counter = document.getElementById('counter');
+  const bar = document.getElementById('bar');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const btnOv = document.getElementById('btnOv');
+  const btnNotes = document.getElementById('btnNotes');
+
+  let idx = 0;
+  let inOverview = false;
+  let notesOn = false;
+
+  function clamp(i){ return Math.max(0, Math.min(slides.length-1, i)); }
+
+  function setActive(i){
+    idx = clamp(i);
+    inOverview = false;
+    overview.classList.remove('active');
+    slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+    updateUI();
+  }
+
+  function updateUI(){
+    const total = slides.length;
+    counter.textContent = (idx+1) + " / " + total;
+    bar.style.width = ((idx+1)/total*100).toFixed(2) + "%";
+    // notes
+    document.querySelectorAll('[data-note]').forEach(n => {
+      n.style.display = notesOn ? 'block' : 'none';
+    });
+  }
+
+  function showOverview(){
+    inOverview = true;
+    slides.forEach(s => s.classList.remove('active'));
+    overview.classList.add('active');
+  }
+
+  function toggleNotes(){
+    notesOn = !notesOn;
+    updateUI();
+  }
+
+  function prev(){ if(!inOverview) setActive(idx-1); }
+  function next(){ if(!inOverview) setActive(idx+1); }
+
+  // Build overview cards
+  function buildOverview(){
+    ovGrid.innerHTML = "";
+    slides.forEach((s, k) => {
+      const title = s.querySelector('h1,h2')?.textContent?.trim() || (s.dataset.title || ("Slide " + (k+1)));
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.cursor = 'pointer';
+      card.innerHTML = `<div class="badge">第 ${k+1} 页</div><h3 style="margin:10px 0 0;">${escapeHtml(title)}</h3>
+                        <p class="small" style="margin-top:8px;">点击跳转</p>`;
+      card.addEventListener('click', () => setActive(k));
+      ovGrid.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  // Threshold demo (illustrative)
+  const thr = document.getElementById('thr');
+  const thrVal = document.getElementById('thrVal');
+  const demoText = document.getElementById('demoText');
+
+  function demo(t){
+    // A tiny illustrative model: pretend probabilities for positives ~ N(0.75, 0.12), negatives ~ N(0.35, 0.15)
+    // Then approximate precision/recall using sigmoid-ish curves (no heavy math, just monotonic relations).
+    const recall = 1 / (1 + Math.exp( 12*(t - 0.62) ));     // higher t -> lower recall
+    const precision = 1 / (1 + Math.exp(-10*(t - 0.48)));  // higher t -> higher precision
+    const f1 = 2*precision*recall/(precision+recall);
+
+    const fmt = (x) => (x*100).toFixed(1) + "%";
+    demoText.textContent =
+`precision ≈ ${fmt(precision)}
+recall    ≈ ${fmt(recall)}
+F1        ≈ ${fmt(f1)}
+
+（示意）阈值升高 → precision↑、recall↓；在某个点 F1 最大。`;
+  }
+
+  if(thr){
+    thr.addEventListener('input', () => {
+      const t = Number(thr.value);
+      thrVal.textContent = "t = " + t.toFixed(2);
+      demo(t);
+    });
+    demo(Number(thr.value));
+  }
+
+  // Events
+  btnPrev.addEventListener('click', prev);
+  btnNext.addEventListener('click', next);
+  btnOv.addEventListener('click', () => inOverview ? setActive(idx) : showOverview());
+  btnNotes.addEventListener('click', toggleNotes);
+
+  document.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    if(key === 'arrowleft') prev();
+    if(key === 'arrowright') next();
+    if(key === 'o') { inOverview ? setActive(idx) : showOverview(); }
+    if(key === 'n') toggleNotes();
+    if(key === 'escape' && inOverview) setActive(idx);
+  });
+
+  // Init
+  buildOverview();
+  setActive(0);
+})();
+</script>
+</body>
+</html>

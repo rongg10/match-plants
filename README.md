@@ -1,91 +1,80 @@
-# Match Plants: Image Similarity (Siamese ResNet18)
+# Match Plants：植物图像相似度（Siamese ResNet18）
 
-This repo contains a Jupyter notebook that trains a pairwise image similarity model to decide whether two plant images depict the same plant. The notebook produces a CSV submission in the required format.
+本仓库包含用于“同株/不同株”判别的孪生网络笔记本，以及一组消融实验（多随机种子）结果汇总。
 
-## What was done
+## 项目内容
 
-- Built a Siamese neural network using a pretrained ResNet18 backbone from `torchvision`.
-- Trained on the provided pair labels (`train_data.csv`) with data augmentation.
-- Tuned a decision threshold on a held-out validation split to maximize F1 for the positive class.
-- Retrained on the full training data and generated predictions for `test_data.csv`.
-- Wrote the submission file `yourname_results.csv` with columns:
-  - `Pair_Num`
-  - `Predicted_Result`
+- 主模型：Siamese ResNet18（ImageNet 预训练）。
+- 训练/验证：对成对图像进行训练，验证集上搜索最佳阈值 `best_t` 以最大化 F1。
+- 输出：生成 `yourname_results.csv`（包含 `Pair_Num` 与 `Predicted_Result`）。
+- 消融实验：每个消融一个独立 `ipynb`，并进行多随机种子评估。
 
-The notebook is `match_plants.ipynb` and is intended to run in the `eoitek` pyenv environment on Apple Silicon (MPS is used when available).
+## 主要文件
 
-## Model overview
+- 训练与基线：`match_plants.ipynb`
+- 消融实验：
+  - `match_plants_baseline.ipynb`
+  - `match_plants_ablation_no_pretrain.ipynb`
+  - `match_plants_ablation_freeze_backbone.ipynb`
+  - `match_plants_ablation_absdiff_only.ipynb`
+  - `match_plants_ablation_mul_only.ipynb`
+  - `match_plants_ablation_no_augmentation.ipynb`
+  - `match_plants_ablation_no_pos_weight.ipynb`
+  - `match_plants_ablation_fixed_threshold.ipynb`
+- 消融结果汇总：
+  - 每个种子明细：`ablation_summary_seeds.csv`
+  - 均值/方差统计：`ablation_summary_stats.csv`
 
-The model is a Siamese network:
+## 模型简介
 
-- **Backbone:** ResNet18 pretrained on ImageNet.
-- **Embedding:** The final classification layer is removed, so each image is mapped to a 512-dim feature vector.
-- **Pair fusion:** For a pair of features `(f1, f2)`, the model computes:
-  - `abs(f1 - f2)`
-  - `f1 * f2`
-  These are concatenated into a 1024-dim vector.
-- **Head:** A small MLP predicts a single logit for "same plant" vs "different plant".
+孪生网络结构如下：
 
-This is a standard setup for image similarity: the backbone learns a robust representation and the head learns how to compare two embeddings.
+- **Backbone**：ResNet18（ImageNet 预训练）
+- **Embedding**：去掉最终分类层，得到 512 维特征
+- **特征对比**：拼接 `|f1 - f2|` 与 `f1 * f2`，形成 1024 维向量
+- **Head**：MLP（1024→256→1）输出单个 logit
 
-## Loss function
+## 训练与阈值
 
-The notebook uses **binary cross-entropy with logits**:
+- 损失函数：`BCEWithLogitsLoss(pos_weight=neg/pos)`
+- 验证指标：正类 F1
+- 阈值选择：在验证集上扫描 0.1～0.9，取最大 F1 的 `best_t`
+
+## 多随机种子消融结果（F1）
+
+随机种子：`0/1/2`，结果为 **均值 ± 标准差**。
 
 ```
-BCEWithLogitsLoss(pos_weight=neg/pos)
+Baseline                0.9783 ± 0.0081
+No pretrain             0.5627 ± 0.0104
+Freeze backbone         0.6271 ± 0.0169
+Abs diff only           0.9612 ± 0.0112
+Mul only                0.9732 ± 0.0037
+No augmentation         0.9917 ± 0.0018
+No pos_weight           0.9897 ± 0.0017
+Fixed threshold 0.5     0.9740 ± 0.0091
 ```
 
-- `pos_weight` balances the classes because the dataset has more negative pairs than positive pairs.
-- The model outputs logits; `torch.sigmoid` converts logits to probabilities.
+## 结论（基于 3 个种子）
 
-## Validation F1 and threshold (`best_t`)
+- **预训练是决定性因素**：去掉预训练后 F1 大幅下降（约 -0.41）。
+- **需要微调 backbone**：冻结 backbone 明显伤害性能。
+- **组合特征更好**：`|f1-f2|` 或 `f1*f2` 单独使用略差，组合更稳健。
+- **阈值搜索有小幅收益**：固定 0.5 略低于验证集调阈值。
+- **增强/类别权重未体现收益**：去掉增强或 `pos_weight` 的 F1 略高，且方差更小；建议进一步验证增强强度与权重策略。
 
-### `val_f1`
-`val_f1` is the **F1 score for the positive class** (same plant) computed on a validation split of pairs. It is calculated from precision and recall:
+## 运行方式
 
-```
-F1 = 2 * (precision * recall) / (precision + recall)
-```
-
-The competition scoring uses the F1 of the positive class, so this is the metric the notebook optimizes.
-
-### `best_t`
-`best_t` is the **decision threshold** applied to the predicted probabilities. Instead of using the default 0.5, the notebook scans thresholds from 0.1 to 0.9 and picks the one that yields the highest validation F1.
-
-Example:
-- If `best_t = 0.68`, then pairs with probability >= 0.68 are predicted as "same plant".
-
-The tuned threshold is then reused when generating the final test predictions.
-
-## Data flow
-
-1. Read training pairs from `data/train_data.csv`.
-2. Split into train/validation pairs for threshold tuning.
-3. Train the Siamese model for a few epochs with augmentation.
-4. Compute `val_f1` over a range of thresholds and store `best_t`.
-5. Retrain on the full training data.
-6. Predict for `data/test_data.csv`.
-7. Write `yourname_results.csv`.
-
-## How to run
-
-From the project directory:
+在项目根目录：
 
 ```
 pyenv shell eoitek
 jupyter lab
 ```
 
-Then open `match_plants.ipynb` and run all cells. The notebook will:
+打开对应 `ipynb` 并按顺序运行。完成后会生成 `yourname_results.csv`，提交前按要求重命名。
 
-- Print training progress and validation F1.
-- Save the submission file as `yourname_results.csv`.
+## 备注
 
-Rename `yourname_results.csv` to your required naming format before submission.
-
-## Notes
-
-- The validation split is done on pairs (not on image IDs), so some images may appear in both train and validation splits. This can make `val_f1` optimistic.
-- If you want stricter evaluation, split by image IDs so pairs do not share images across splits.
-- If you increase epochs or use a larger backbone, you may improve accuracy at the cost of time.
+- 当前验证划分基于“成对样本”，可能出现同一图像同时出现在训练/验证中，F1 可能偏乐观。
+- 如果需要更严格评估，可按图像 ID 分组划分训练/验证，避免图像泄漏。

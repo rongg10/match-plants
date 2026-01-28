@@ -1,0 +1,25 @@
+experiment,notebook,seed,best_f1,best_t
+Baseline,match_plants_baseline.ipynb,0,0.9875,0.59
+Baseline,match_plants_baseline.ipynb,1,0.9721362229102167,0.36
+Baseline,match_plants_baseline.ipynb,2,0.9753086419753086,0.45000000000000007
+No pretrain,match_plants_ablation_no_pretrain.ipynb,0,0.5632183908045977,0.37
+No pretrain,match_plants_ablation_no_pretrain.ipynb,1,0.552,0.51
+No pretrain,match_plants_ablation_no_pretrain.ipynb,2,0.5727482678983834,0.47
+Freeze backbone,match_plants_ablation_freeze_backbone.ipynb,0,0.6076696165191741,0.56
+Freeze backbone,match_plants_ablation_freeze_backbone.ipynb,1,0.6381909547738693,0.45000000000000007
+Freeze backbone,match_plants_ablation_freeze_backbone.ipynb,2,0.6354166666666666,0.48
+Abs diff only,match_plants_ablation_absdiff_only.ipynb,0,0.9631901840490797,0.52
+Abs diff only,match_plants_ablation_absdiff_only.ipynb,1,0.9712460063897763,0.63
+Abs diff only,match_plants_ablation_absdiff_only.ipynb,2,0.9490445859872612,0.65
+Mul only,match_plants_ablation_mul_only.ipynb,0,0.975609756097561,0.38
+Mul only,match_plants_ablation_mul_only.ipynb,1,0.968944099378882,0.37
+Mul only,match_plants_ablation_mul_only.ipynb,2,0.9751552795031055,0.30000000000000004
+No augmentation,match_plants_ablation_no_augmentation.ipynb,0,0.9937888198757764,0.35
+No augmentation,match_plants_ablation_no_augmentation.ipynb,1,0.9906542056074766,0.5
+No augmentation,match_plants_ablation_no_augmentation.ipynb,2,0.9906542056074766,0.44000000000000006
+No pos_weight,match_plants_ablation_no_pos_weight.ipynb,0,0.9907120743034056,0.33
+No pos_weight,match_plants_ablation_no_pos_weight.ipynb,1,0.9906542056074766,0.4
+No pos_weight,match_plants_ablation_no_pos_weight.ipynb,2,0.9876543209876543,0.17
+Fixed threshold 0.5,match_plants_ablation_fixed_threshold.ipynb,0,0.9844236760124611,0.5
+Fixed threshold 0.5,match_plants_ablation_fixed_threshold.ipynb,1,0.9685534591194969,0.5
+Fixed threshold 0.5,match_plants_ablation_fixed_threshold.ipynb,2,0.968944099378882,0.5
