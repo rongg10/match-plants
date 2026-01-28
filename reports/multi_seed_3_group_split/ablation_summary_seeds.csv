@@ -1,0 +1,25 @@
+experiment,notebook,seed,best_f1,best_t
+Baseline,notebooks/ablations_group_split/match_plants_baseline_group_split.ipynb,0,0.9655172413793104,0.71
+Baseline,notebooks/ablations_group_split/match_plants_baseline_group_split.ipynb,1,0.9333333333333333,0.28
+Baseline,notebooks/ablations_group_split/match_plants_baseline_group_split.ipynb,2,0.9824561403508771,0.82
+No pretrain,notebooks/ablations_group_split/match_plants_ablation_no_pretrain_group_split.ipynb,0,0.6,0.63
+No pretrain,notebooks/ablations_group_split/match_plants_ablation_no_pretrain_group_split.ipynb,1,0.6206896551724138,0.54
+No pretrain,notebooks/ablations_group_split/match_plants_ablation_no_pretrain_group_split.ipynb,2,0.5542168674698795,0.49
+Freeze backbone,notebooks/ablations_group_split/match_plants_ablation_freeze_backbone_group_split.ipynb,0,0.696969696969697,0.55
+Freeze backbone,notebooks/ablations_group_split/match_plants_ablation_freeze_backbone_group_split.ipynb,1,0.6885245901639344,0.52
+Freeze backbone,notebooks/ablations_group_split/match_plants_ablation_freeze_backbone_group_split.ipynb,2,0.6329113924050633,0.45999999999999996
+Abs diff only,notebooks/ablations_group_split/match_plants_ablation_absdiff_only_group_split.ipynb,0,0.9180327868852459,0.37
+Abs diff only,notebooks/ablations_group_split/match_plants_ablation_absdiff_only_group_split.ipynb,1,0.9310344827586207,0.76
+Abs diff only,notebooks/ablations_group_split/match_plants_ablation_absdiff_only_group_split.ipynb,2,0.9032258064516129,0.36
+Mul only,notebooks/ablations_group_split/match_plants_ablation_mul_only_group_split.ipynb,0,0.9655172413793104,0.65
+Mul only,notebooks/ablations_group_split/match_plants_ablation_mul_only_group_split.ipynb,1,0.9333333333333333,0.56
+Mul only,notebooks/ablations_group_split/match_plants_ablation_mul_only_group_split.ipynb,2,0.9122807017543859,0.72
+No augmentation,notebooks/ablations_group_split/match_plants_ablation_no_augmentation_group_split.ipynb,0,0.9491525423728814,0.54
+No augmentation,notebooks/ablations_group_split/match_plants_ablation_no_augmentation_group_split.ipynb,1,0.9333333333333333,0.28
+No augmentation,notebooks/ablations_group_split/match_plants_ablation_no_augmentation_group_split.ipynb,2,0.9642857142857143,0.67
+No pos_weight,notebooks/ablations_group_split/match_plants_ablation_no_pos_weight_group_split.ipynb,0,0.9508196721311475,0.11
+No pos_weight,notebooks/ablations_group_split/match_plants_ablation_no_pos_weight_group_split.ipynb,1,0.9655172413793104,0.69
+No pos_weight,notebooks/ablations_group_split/match_plants_ablation_no_pos_weight_group_split.ipynb,2,0.9655172413793104,0.55
+Fixed threshold 0.5,notebooks/ablations_group_split/match_plants_ablation_fixed_threshold_group_split.ipynb,0,0.9333333333333333,0.5
+Fixed threshold 0.5,notebooks/ablations_group_split/match_plants_ablation_fixed_threshold_group_split.ipynb,1,0.9333333333333333,0.5
+Fixed threshold 0.5,notebooks/ablations_group_split/match_plants_ablation_fixed_threshold_group_split.ipynb,2,0.9032258064516129,0.5

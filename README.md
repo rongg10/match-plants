@@ -1,51 +1,44 @@
-# Match Plants：植物图像相似度（Siamese ResNet18）
+# Match Plants：植物图像同株判别（Siamese ResNet18）
 
-本仓库包含用于“同株/不同株”判别的孪生网络笔记本，以及一组消融实验（多随机种子）结果汇总。
+本项目用孪生网络判断两张植物照片是否为同一株（Same / Different）。包含基线训练、消融实验、多随机种子结果，以及按图像 ID 分组的“无泄漏”验证方案。
 
-## 项目内容
+## 项目结构
 
-- 主模型：Siamese ResNet18（ImageNet 预训练）。
-- 训练/验证：对成对图像进行训练，验证集上搜索最佳阈值 `best_t` 以最大化 F1。
-- 输出：生成 `yourname_results.csv`（包含 `Pair_Num` 与 `Predicted_Result`）。
-- 消融实验：每个消融一个独立 `ipynb`，并进行多随机种子评估。
+- 主 notebook（原始划分，按 pair 切分）  
+  - `match_plants.ipynb`
+- 按图像 ID 分组划分（避免图像泄漏）  
+  - `match_plants_group_split.ipynb`
+- 消融实验（原始划分）  
+  - `notebooks/ablations/`
+- 消融实验（图像 ID 分组划分）  
+  - `notebooks/ablations_group_split/`
+- 报告/结果  
+  - 单种子：`reports/single_seed/ablation_summary.csv`
+  - 三种子（原始划分）：`reports/multi_seed_3/ablation_summary_seeds.csv`  
+    `reports/multi_seed_3/ablation_summary_stats.csv`
+  - 三种子（图像 ID 分组）：`reports/multi_seed_3_group_split/ablation_summary_seeds.csv`  
+    `reports/multi_seed_3_group_split/ablation_summary_stats.csv`
+- 运行产物（已执行的 seed notebooks）  
+  - `runs/multi_seed_3/ablation_runs/`  
+  - `runs/multi_seed_3_group_split/ablation_runs_v2/`
 
-## 主要文件
+## 模型与训练概述
 
-- 训练与基线：`match_plants.ipynb`
-- 消融实验（已收纳）：
-  - `notebooks/ablations/match_plants_baseline.ipynb`
-  - `notebooks/ablations/match_plants_ablation_no_pretrain.ipynb`
-  - `notebooks/ablations/match_plants_ablation_freeze_backbone.ipynb`
-  - `notebooks/ablations/match_plants_ablation_absdiff_only.ipynb`
-  - `notebooks/ablations/match_plants_ablation_mul_only.ipynb`
-  - `notebooks/ablations/match_plants_ablation_no_augmentation.ipynb`
-  - `notebooks/ablations/match_plants_ablation_no_pos_weight.ipynb`
-  - `notebooks/ablations/match_plants_ablation_fixed_threshold.ipynb`
-- 消融结果汇总：
-  - 单种子汇总：`reports/single_seed/ablation_summary.csv`
-  - 三种子明细：`reports/multi_seed_3/ablation_summary_seeds.csv`
-  - 三种子统计：`reports/multi_seed_3/ablation_summary_stats.csv`
-- 执行产物：
-  - 三种子执行后的临时 notebook：`runs/multi_seed_3/ablation_runs/`
+- Backbone：ResNet18（ImageNet 预训练）
+- 特征：去掉分类头得到 512 维
+- 对比特征：拼接 `|f1-f2|` 与 `f1*f2`
+- Head：MLP（1024→256→1）
+- 损失：`BCEWithLogitsLoss(pos_weight=neg/pos)`
+- 阈值：验证集扫描 0.1~0.9 取最佳 `best_t`
 
-## 模型简介
+## 为什么需要“按图像 ID 分组”
 
-孪生网络结构如下：
+原始 notebook 使用 **按 pair 的随机切分**，同一图像可能同时出现在训练与验证中，导致验证 F1 偏乐观。  
+因此新增 `match_plants_group_split.ipynb` 及对应消融版本，按图像 ID 划分训练/验证，避免泄漏。
 
-- **Backbone**：ResNet18（ImageNet 预训练）
-- **Embedding**：去掉最终分类层，得到 512 维特征
-- **特征对比**：拼接 `|f1 - f2|` 与 `f1 * f2`，形成 1024 维向量
-- **Head**：MLP（1024→256→1）输出单个 logit
+## 结果汇总（F1，均值 ± 标准差，3 seeds: 0/1/2）
 
-## 训练与阈值
-
-- 损失函数：`BCEWithLogitsLoss(pos_weight=neg/pos)`
-- 验证指标：正类 F1
-- 阈值选择：在验证集上扫描 0.1～0.9，取最大 F1 的 `best_t`
-
-## 多随机种子消融结果（F1）
-
-随机种子：`0/1/2`，结果为 **均值 ± 标准差**。
+### 原始划分（按 pair）
 
 ```
 Baseline                0.9783 ± 0.0081
@@ -58,26 +51,22 @@ No pos_weight           0.9897 ± 0.0017
 Fixed threshold 0.5     0.9740 ± 0.0091
 ```
 
-## 结论（基于 3 个种子）
-
-- **预训练是决定性因素**：去掉预训练后 F1 大幅下降（约 -0.41）。
-- **需要微调 backbone**：冻结 backbone 明显伤害性能。
-- **组合特征更好**：`|f1-f2|` 或 `f1*f2` 单独使用略差，组合更稳健。
-- **阈值搜索有小幅收益**：固定 0.5 略低于验证集调阈值。
-- **增强/类别权重未体现收益**：去掉增强或 `pos_weight` 的 F1 略高，且方差更小；建议进一步验证增强强度与权重策略。
-
-## 运行方式
-
-在项目根目录：
+### 图像 ID 分组划分（避免泄漏）
 
 ```
-pyenv shell eoitek
-jupyter lab
+Baseline                0.9604 ± 0.0250
+No pretrain             0.5916 ± 0.0340
+Freeze backbone         0.6728 ± 0.0348
+Abs diff only           0.9174 ± 0.0139
+Mul only                0.9370 ± 0.0268
+No augmentation         0.9489 ± 0.0155
+No pos_weight           0.9606 ± 0.0085
+Fixed threshold 0.5     0.9233 ± 0.0174
 ```
 
-打开对应 `ipynb` 并按顺序运行。完成后会生成 `yourname_results.csv`，提交前按要求重命名。
+## 主要结论（基于 3 个种子）
 
-## 备注
-
-- 当前验证划分基于“成对样本”，可能出现同一图像同时出现在训练/验证中，F1 可能偏乐观。
-- 如果需要更严格评估，可按图像 ID 分组划分训练/验证，避免图像泄漏。
+- **预训练与微调是决定性因素**：去掉预训练或冻结 backbone，F1 大幅下降。
+- **组合特征更稳健**：单用 `|f1-f2|` 或 `f1*f2` 均略差于组合。
+- **阈值搜索略优于固定 0.5**。
+- **图像 ID 分组结果更保守**，更接近真实泛化。
