@@ -12,18 +12,21 @@
 ## 主要文件
 
 - 训练与基线：`match_plants.ipynb`
-- 消融实验：
-  - `match_plants_baseline.ipynb`
-  - `match_plants_ablation_no_pretrain.ipynb`
-  - `match_plants_ablation_freeze_backbone.ipynb`
-  - `match_plants_ablation_absdiff_only.ipynb`
-  - `match_plants_ablation_mul_only.ipynb`
-  - `match_plants_ablation_no_augmentation.ipynb`
-  - `match_plants_ablation_no_pos_weight.ipynb`
-  - `match_plants_ablation_fixed_threshold.ipynb`
+- 消融实验（已收纳）：
+  - `notebooks/ablations/match_plants_baseline.ipynb`
+  - `notebooks/ablations/match_plants_ablation_no_pretrain.ipynb`
+  - `notebooks/ablations/match_plants_ablation_freeze_backbone.ipynb`
+  - `notebooks/ablations/match_plants_ablation_absdiff_only.ipynb`
+  - `notebooks/ablations/match_plants_ablation_mul_only.ipynb`
+  - `notebooks/ablations/match_plants_ablation_no_augmentation.ipynb`
+  - `notebooks/ablations/match_plants_ablation_no_pos_weight.ipynb`
+  - `notebooks/ablations/match_plants_ablation_fixed_threshold.ipynb`
 - 消融结果汇总：
-  - 每个种子明细：`ablation_summary_seeds.csv`
-  - 均值/方差统计：`ablation_summary_stats.csv`
+  - 单种子汇总：`reports/single_seed/ablation_summary.csv`
+  - 三种子明细：`reports/multi_seed_3/ablation_summary_seeds.csv`
+  - 三种子统计：`reports/multi_seed_3/ablation_summary_stats.csv`
+- 执行产物：
+  - 三种子执行后的临时 notebook：`runs/multi_seed_3/ablation_runs/`
 
 ## 模型简介
 
