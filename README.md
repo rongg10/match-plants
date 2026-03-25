@@ -1,44 +1,44 @@
-# Match Plants：植物图像同株判别（Siamese ResNet18）
+# Match Plants: Same-Plant Image Identification (Siamese ResNet18)
 
-本项目用孪生网络判断两张植物照片是否为同一株（Same / Different）。包含基线训练、消融实验、多随机种子结果，以及按图像 ID 分组的“无泄漏”验证方案。
+This project uses a Siamese network to determine whether two plant photos belong to the same individual plant (Same / Different). It includes baseline training, ablation studies, multi-random-seed results, and a "leak-free" validation scheme grouped by image ID.
 
-## 项目结构
+## Project Structure
 
-- 主 notebook（原始划分，按 pair 切分）  
+- Main notebook (original split, split by pair)  
   - `match_plants.ipynb`
-- 按图像 ID 分组划分（避免图像泄漏）  
+- Split grouped by image ID (to avoid image leakage)  
   - `match_plants_group_split.ipynb`
-- 消融实验（原始划分）  
+- Ablation studies (original split)  
   - `notebooks/ablations/`
-- 消融实验（图像 ID 分组划分）  
+- Ablation studies (image ID grouped split)  
   - `notebooks/ablations_group_split/`
-- 报告/结果  
-  - 单种子：`reports/single_seed/ablation_summary.csv`
-  - 三种子（原始划分）：`reports/multi_seed_3/ablation_summary_seeds.csv`  
+- Reports / results  
+  - Single seed: `reports/single_seed/ablation_summary.csv`
+  - Three seeds (original split): `reports/multi_seed_3/ablation_summary_seeds.csv`  
     `reports/multi_seed_3/ablation_summary_stats.csv`
-  - 三种子（图像 ID 分组）：`reports/multi_seed_3_group_split/ablation_summary_seeds.csv`  
+  - Three seeds (grouped by image ID): `reports/multi_seed_3_group_split/ablation_summary_seeds.csv`  
     `reports/multi_seed_3_group_split/ablation_summary_stats.csv`
-- 运行产物（已执行的 seed notebooks）  
+- Run artifacts (executed seed notebooks)  
   - `runs/multi_seed_3/ablation_runs/`  
   - `runs/multi_seed_3_group_split/ablation_runs_v2/`
 
-## 模型与训练概述
+## Model and Training Overview
 
-- Backbone：ResNet18（ImageNet 预训练）
-- 特征：去掉分类头得到 512 维
-- 对比特征：拼接 `|f1-f2|` 与 `f1*f2`
-- Head：MLP（1024→256→1）
-- 损失：`BCEWithLogitsLoss(pos_weight=neg/pos)`
-- 阈值：验证集扫描 0.1~0.9 取最佳 `best_t`
+- Backbone: ResNet18 (ImageNet pretrained)
+- Features: remove the classification head to obtain 512 dimensions
+- Comparison features: concatenate `|f1-f2|` and `f1*f2`
+- Head: MLP (1024→256→1)
+- Loss: `BCEWithLogitsLoss(pos_weight=neg/pos)`
+- Threshold: scan 0.1~0.9 on the validation set and select the best `best_t`
 
-## 为什么需要“按图像 ID 分组”
+## Why "Grouped by Image ID" Is Needed
 
-原始 notebook 使用 **按 pair 的随机切分**，同一图像可能同时出现在训练与验证中，导致验证 F1 偏乐观。  
-因此新增 `match_plants_group_split.ipynb` 及对应消融版本，按图像 ID 划分训练/验证，避免泄漏。
+The original notebook uses a **random split by pair**, so the same image may appear in both training and validation, which makes validation F1 overly optimistic.  
+For that reason, `match_plants_group_split.ipynb` and the corresponding ablation versions were added to split training/validation by image ID and avoid leakage.
 
-## 结果汇总（F1，均值 ± 标准差，3 seeds: 0/1/2）
+## Results Summary (F1, mean ± standard deviation, 3 seeds: 0/1/2)
 
-### 原始划分（按 pair）
+### Original Split (by pair)
 
 ```
 Baseline                0.9783 ± 0.0081
@@ -51,7 +51,7 @@ No pos_weight           0.9897 ± 0.0017
 Fixed threshold 0.5     0.9740 ± 0.0091
 ```
 
-### 图像 ID 分组划分（避免泄漏）
+### Image ID Grouped Split (avoid leakage)
 
 ```
 Baseline                0.9604 ± 0.0250
@@ -64,9 +64,9 @@ No pos_weight           0.9606 ± 0.0085
 Fixed threshold 0.5     0.9233 ± 0.0174
 ```
 
-## 主要结论（基于 3 个种子）
+## Main Conclusions (based on 3 seeds)
 
-- **预训练与微调是决定性因素**：去掉预训练或冻结 backbone，F1 大幅下降。
-- **组合特征更稳健**：单用 `|f1-f2|` 或 `f1*f2` 均略差于组合。
-- **阈值搜索略优于固定 0.5**。
-- **图像 ID 分组结果更保守**，更接近真实泛化。
+- **Pretraining and fine-tuning are decisive factors**: removing pretraining or freezing the backbone causes a large drop in F1.
+- **Combined features are more robust**: using only `|f1-f2|` or only `f1*f2` is slightly worse than combining them.
+- **Threshold search is slightly better than a fixed 0.5**.
+- **Image ID grouped results are more conservative**, and closer to true generalization.
